@@ -8,7 +8,7 @@ It's backed by [clipy](https://github.com/c12i/clipy-rust), a small daemon that 
 
 [neoclip.lua](https://github.com/AckslD/nvim-neoclip.lua) is a similar-looking picker, but it's fundamentally different: it hooks `TextYankPost`, so it only records things yanked or deleted _inside Neovim_. Copy any text anywhere outside Neovim, and it's invisible to neoclip. Its history also lives in Neovim's own memory by default, so it resets every time Neovim closes unless you turn on persistent history.
 
-nvim-clipy's history comes from the daemon polling the real system clipboard, not a Neovim event, so it captures everything you copy anywhere on the machine. Because that capture is a separate process from Neovim, it persists across Neovim restarts and is shared across every Neovim instance you have open.
+nvim-clipy's history comes from the daemon polling the real system clipboard instead of a Neovim event, so it captures everything you copy anywhere on the machine. Because that capture is a separate process from Neovim, it persists across Neovim restarts and is shared across every Neovim instance you have open.
 
 ## Prerequisites
 
@@ -61,16 +61,27 @@ return {
 
 ## Commands
 
-`:ClipyList`, `:ClipyShow {id}`, `:ClipyCopy {id}`, `:ClipyDelete {id}`, `:ClipyClear`, `:ClipyStatus`, `:ClipyKill` (restarts automatically next time Neovim starts), `:ClipyPick` (Telescope, with preview), `:ClipyBrowse` (bottom-split browser). See `:help nvim-clipy` for details, or the Lua API via `require("nvim-clipy")`.
+| Command        | Description                                                      |
+| -------------- | ---------------------------------------------------------------- |
+| `:ClipyList`   | List recent clipboard history entries                            |
+| `:ClipyClear`  | Delete all history                                               |
+| `:ClipyStatus` | Show daemon status                                               |
+| `:ClipyKill`   | Stop the daemon (restarts automatically next time Neovim starts) |
+| `:ClipyPick`   | Pick an entry via Telescope, with preview                        |
+| `:ClipyBrowse` | Browse history in a persistent bottom split                      |
 
-In the `:ClipyPick` picker: `<CR>` copies the selected entry back to the clipboard, `<C-d>` deletes it.
+See `:help nvim-clipy` for details, or the Lua API via `require("nvim-clipy")`.
 
-`:ClipyBrowse` is an alternative to the Telescope picker: a persistent
-bottom split you can leave open and glance at, rather than a modal that
-closes on selection. Re-running `:ClipyBrowse` while it's already open just
-focuses and refreshes it instead of opening a duplicate. Keymaps in that
-buffer: `<CR>` copies the entry under the cursor (without closing the
-split), `dd` deletes it, `R` refreshes the list, `q`/`<Esc>` closes it.
+**`:ClipyPick`**: `<CR>` copies the selected entry back to the clipboard, `<C-d>` deletes it.
+
+**`:ClipyBrowse`** is an alternative to the Telescope picker: a persistent bottom split you can leave open and glance at, rather than a modal that closes on selection. Re-running `:ClipyBrowse` while it's already open just focuses and refreshes it instead of opening a duplicate.
+
+| Key           | Action                                                    |
+| ------------- | --------------------------------------------------------- |
+| `<CR>`        | Copy the entry under the cursor (doesn't close the split) |
+| `dd`          | Delete the entry under the cursor                         |
+| `R`           | Refresh the list                                          |
+| `q` / `<Esc>` | Close the split                                           |
 
 ## Keymaps
 
@@ -80,6 +91,10 @@ No default keymaps are set. If you're not using lazy.nvim's `keys` spec (shown i
 vim.keymap.set("n", "<leader>sy", function()
   require("nvim-clipy.telescope").pick()
 end, { desc = "Clipboard history" })
+
+vim.keymap.set("n", "<leader>sY", function()
+  require("nvim-clipy.browser").open()
+end, { desc = "Clipboard history (bottom split)" })
 ```
 
 This project is [MIT](LICENSE) licensed.

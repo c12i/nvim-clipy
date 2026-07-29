@@ -113,9 +113,6 @@ With lazy.nvim:
 6. Commands                                            *nvim-clipy-commands*
 
     :ClipyList                     List recent clipboard history entries.
-    :ClipyShow {id}                Show an entry's full content in a float.
-    :ClipyCopy {id}                Copy an entry back to the clipboard.
-    :ClipyDelete {id}               Delete one entry.
     :ClipyClear                    Delete all history.
     :ClipyStatus                   Show daemon status.
     :ClipyKill                     Stop the running daemon. It restarts
@@ -128,7 +125,10 @@ With lazy.nvim:
     :ClipyBrowse                   Browse history in a persistent bottom
                                      split. See |nvim-clipy-browse| below.
 
-`{id}` accepts a unique prefix, same as the `clipy` CLI.
+Acting on a specific entry (copy/show/delete) is done from `:ClipyPick` or
+`:ClipyBrowse`, not by typing an id into a command -- there's no
+`:ClipyCopy {id}`-style command, since resolving ids by hand isn't a great
+fit for Neovim once you have a picker.
 
 In the `:ClipyPick` picker: `<CR>` copies the selected entry back to the
 clipboard, `<C-d>` deletes it.

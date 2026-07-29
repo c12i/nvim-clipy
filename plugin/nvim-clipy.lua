@@ -13,18 +13,6 @@ command("ClipyList", function()
   require("nvim-clipy").list()
 end, { desc = "List clipboard history" })
 
-command("ClipyShow", function(args)
-  require("nvim-clipy").show(args.args)
-end, { nargs = 1, desc = "Show a clipboard history entry's full content" })
-
-command("ClipyCopy", function(args)
-  require("nvim-clipy").copy(args.args)
-end, { nargs = 1, desc = "Copy a clipboard history entry back to the clipboard" })
-
-command("ClipyDelete", function(args)
-  require("nvim-clipy").delete(args.args)
-end, { nargs = 1, desc = "Delete a clipboard history entry" })
-
 command("ClipyClear", function()
   require("nvim-clipy").clear()
 end, { desc = "Clear all clipboard history" })

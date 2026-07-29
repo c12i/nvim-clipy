@@ -60,7 +60,7 @@ local function setup_buffer()
   vim.bo[buf].bufhidden = "wipe"
   vim.bo[buf].swapfile = false
   vim.bo[buf].filetype = "nvim-clipy"
-  pcall(vim.api.nvim_buf_set_name, buf, "nvim-clipy://history")
+  pcall(vim.api.nvim_buf_set_name, buf, "[Clipboard History]")
 
   map("<CR>", function()
     local entry = entry_at_cursor()
