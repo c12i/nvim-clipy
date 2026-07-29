@@ -61,9 +61,16 @@ return {
 
 ## Commands
 
-`:ClipyList`, `:ClipyShow {id}`, `:ClipyCopy {id}`, `:ClipyDelete {id}`, `:ClipyClear`, `:ClipyStatus`, `:ClipyKill` (restarts automatically next time Neovim starts), `:ClipyPick` (Telescope, with preview). See `:help nvim-clipy` for details, or the Lua API via `require("nvim-clipy")`.
+`:ClipyList`, `:ClipyShow {id}`, `:ClipyCopy {id}`, `:ClipyDelete {id}`, `:ClipyClear`, `:ClipyStatus`, `:ClipyKill` (restarts automatically next time Neovim starts), `:ClipyPick` (Telescope, with preview), `:ClipyBrowse` (bottom-split browser). See `:help nvim-clipy` for details, or the Lua API via `require("nvim-clipy")`.
 
 In the `:ClipyPick` picker: `<CR>` copies the selected entry back to the clipboard, `<C-d>` deletes it.
+
+`:ClipyBrowse` is an alternative to the Telescope picker: a persistent
+bottom split you can leave open and glance at, rather than a modal that
+closes on selection. Re-running `:ClipyBrowse` while it's already open just
+focuses and refreshes it instead of opening a duplicate. Keymaps in that
+buffer: `<CR>` copies the entry under the cursor (without closing the
+split), `dd` deletes it, `R` refreshes the list, `q`/`<Esc>` closes it.
 
 ## Keymaps
 

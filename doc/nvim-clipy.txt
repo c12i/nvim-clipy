@@ -125,11 +125,25 @@ With lazy.nvim:
                                      Also available as `:Telescope nvim-clipy`
                                      once the extension is loaded with
                                      `require("telescope").load_extension("nvim-clipy")`.
+    :ClipyBrowse                   Browse history in a persistent bottom
+                                     split. See |nvim-clipy-browse| below.
 
 `{id}` accepts a unique prefix, same as the `clipy` CLI.
 
 In the `:ClipyPick` picker: `<CR>` copies the selected entry back to the
 clipboard, `<C-d>` deletes it.
+
+                                                        *nvim-clipy-browse*
+`:ClipyBrowse` is an alternative to the Telescope picker: a persistent
+bottom split you can leave open and glance at, rather than a modal that
+closes on selection. Re-running `:ClipyBrowse` while it's already open just
+focuses and refreshes it instead of opening a duplicate. Keymaps in that
+buffer:
+
+    <CR>    Copy the entry under the cursor (does not close the split).
+    dd      Delete the entry under the cursor.
+    R       Refresh the list.
+    q / <Esc>   Close the split.
 
 ==============================================================================
 7. Keymaps                                              *nvim-clipy-keymaps*

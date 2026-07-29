@@ -41,6 +41,10 @@ command("ClipyPick", function()
   require("nvim-clipy.telescope").pick()
 end, { desc = "Pick a clipboard history entry via Telescope" })
 
+command("ClipyBrowse", function()
+  require("nvim-clipy.browser").open()
+end, { desc = "Browse clipboard history in a bottom split" })
+
 vim.api.nvim_create_autocmd("VimEnter", {
   group = vim.api.nvim_create_augroup("nvim_clipy_autostart", { clear = true }),
   callback = function()
