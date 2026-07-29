@@ -40,3 +40,11 @@ end, { desc = "Stop the clipy daemon" })
 command("ClipyPick", function()
   require("nvim-clipy.telescope").pick()
 end, { desc = "Pick a clipboard history entry via Telescope" })
+
+vim.api.nvim_create_autocmd("VimEnter", {
+  group = vim.api.nvim_create_augroup("nvim_clipy_autostart", { clear = true }),
+  callback = function()
+    require("nvim-clipy").ensure_daemon()
+  end,
+  desc = "Start the clipy daemon if it isn't already running",
+})

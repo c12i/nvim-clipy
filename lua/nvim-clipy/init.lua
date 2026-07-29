@@ -2,8 +2,31 @@ local client = require("nvim-clipy.client")
 
 local M = {}
 
+--- Mirrors `dirs::data_dir()` on the daemon side (clipy-rust/src/daemon.rs):
+--- $CLIPY_DATA_DIR if set, else the OS-conventional per-user data dir.
+local function default_data_dir()
+  local override = vim.env.CLIPY_DATA_DIR
+  if override and override ~= "" then
+    return override
+  end
+
+  if vim.fn.has("mac") == 1 then
+    return vim.fn.expand("~/Library/Application Support/clipy-rust")
+  end
+
+  if vim.fn.has("win32") == 1 and vim.env.APPDATA then
+    return vim.env.APPDATA .. "/clipy-rust"
+  end
+
+  local xdg_data_home = vim.env.XDG_DATA_HOME
+  if xdg_data_home and xdg_data_home ~= "" then
+    return xdg_data_home .. "/clipy-rust"
+  end
+  return vim.fn.expand("~/.local/share/clipy-rust")
+end
+
 M.config = {
-  socket_path = vim.fn.expand("~/Library/Application Support/clipy-rust/clipy.sock"),
+  socket_path = default_data_dir() .. "/clipy.sock",
   history_limit = 30,
 }
 
@@ -27,6 +50,50 @@ end
 
 local function short_id(id)
   return id:sub(1, 8)
+end
+
+--- Spawns `clipy watch` detached (own session, ignored stdio) so it outlives
+--- this Neovim process. No-ops with a warning if `clipy` isn't on $PATH.
+local function start_daemon()
+  if vim.fn.executable("clipy") == 0 then
+    notify(
+      "`clipy` binary not found on $PATH -- clipboard history daemon not started (install with `cargo install clipy`)",
+      vim.log.levels.WARN
+    )
+    return
+  end
+
+  local uv = vim.uv or vim.loop
+  local handle
+  handle = uv.spawn("clipy", {
+    args = { "watch" },
+    detached = true,
+    stdio = { nil, nil, nil },
+  }, function()
+    if handle then
+      handle:close()
+    end
+  end)
+
+  if not handle then
+    notify("failed to start the clipy daemon", vim.log.levels.ERROR)
+    return
+  end
+  handle:unref()
+end
+
+--- Starts the daemon if it isn't already reachable. Meant to be called once
+--- per session (e.g. on VimEnter); safe to call from multiple concurrent
+--- Neovim instances since the daemon itself refuses to bind twice.
+function M.ensure_daemon()
+  local uv = vim.uv or vim.loop
+  local pipe = uv.new_pipe(false)
+  pipe:connect(M.config.socket_path, function(err)
+    pipe:close()
+    if err then
+      vim.schedule(start_daemon)
+    end
+  end)
 end
 
 --- Runs `req` and calls `on_ok(response)` unless the daemon is unreachable or

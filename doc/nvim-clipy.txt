@@ -14,8 +14,9 @@ CONTENTS                                                *nvim-clipy-contents*
 1. Introduction                                    *nvim-clipy-introduction*
 
 nvim-clipy talks directly to the `clipy` daemon's Unix socket (see the
-clipy-rust project) using `vim.uv`, so it needs the daemon running. No
-`clipy` binary is required by the plugin itself, only the daemon.
+clipy-rust project) using `vim.uv`. The plugin starts the daemon for you
+(see |nvim-clipy-installation|); the `clipy` binary itself must be
+installed for that to work.
 
 ==============================================================================
 2. Installation                                  *nvim-clipy-installation*
@@ -24,8 +25,15 @@ The `clipy` daemon is published on crates.io and installs via cargo:
 >
     cargo install clipy
 <
-Then start it (in the background, or under a process supervisor of your
-choice):
+That's it -- on `VimEnter`, nvim-clipy checks whether `clipy watch` is
+already reachable and, if not, spawns it detached so it keeps running after
+Neovim closes. If `clipy` isn't on `$PATH`, you'll get a warning instead of
+an error, pointing back at `cargo install clipy`.
+
+If you'd rather the daemon run independently of Neovim entirely --
+surviving reboots, capturing clipboard changes even when Neovim is never
+opened -- start it yourself under a process supervisor instead (on macOS, a
+launchd LaunchAgent with `RunAtLoad`/`KeepAlive` works well):
 >
     clipy watch > /tmp/clipy.log 2>&1 &
 <
@@ -48,9 +56,12 @@ With lazy.nvim, from GitHub:
 
 >lua
     require("nvim-clipy").setup({
-      -- defaults shown
-      socket_path = vim.fn.expand("~/Library/Application Support/clipy-rust/clipy.sock"),
-      history_limit = 30,
+      -- socket_path defaults to your OS's per-user data dir + "clipy-rust/clipy.sock"
+      -- (same resolution as the daemon: respects $CLIPY_DATA_DIR if set, see
+      -- clipy-rust/src/daemon.rs), e.g. on macOS:
+      -- "~/Library/Application Support/clipy-rust/clipy.sock"
+      socket_path = "...",
+      history_limit = 30, -- default shown
     })
 <
 
@@ -63,7 +74,8 @@ With lazy.nvim, from GitHub:
     :ClipyDelete {id}               Delete one entry.
     :ClipyClear                    Delete all history.
     :ClipyStatus                   Show daemon status.
-    :ClipyKill                     Stop the running daemon.
+    :ClipyKill                     Stop the running daemon. It restarts
+                                     automatically next time Neovim starts.
     :ClipyPick                     Pick an entry via Telescope, with a
                                      content preview (requires telescope.nvim).
                                      Also available as `:Telescope nvim-clipy`
