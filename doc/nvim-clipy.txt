@@ -4,22 +4,47 @@
 CONTENTS                                                *nvim-clipy-contents*
 
     1. Introduction ............... |nvim-clipy-introduction|
-    2. Setup ............................. |nvim-clipy-setup|
-    3. Commands ....................... |nvim-clipy-commands|
-    4. Lua API ........................... |nvim-clipy-api|
+    2. Installation ............... |nvim-clipy-installation|
+    3. Setup ............................. |nvim-clipy-setup|
+    4. Commands ....................... |nvim-clipy-commands|
+    5. Keymaps ....................... |nvim-clipy-keymaps|
+    6. Lua API ........................... |nvim-clipy-api|
 
 ==============================================================================
 1. Introduction                                    *nvim-clipy-introduction*
 
 nvim-clipy talks directly to the `clipy` daemon's Unix socket (see the
-clipy-rust project) using `vim.uv`, so it needs the daemon running:
+clipy-rust project) using `vim.uv`, so it needs the daemon running. No
+`clipy` binary is required by the plugin itself, only the daemon.
+
+==============================================================================
+2. Installation                                  *nvim-clipy-installation*
+
+The `clipy` daemon is published on crates.io and installs via cargo:
+>
+    cargo install clipy
+<
+Then start it (in the background, or under a process supervisor of your
+choice):
 >
     clipy watch > /tmp/clipy.log 2>&1 &
 <
-No `clipy` binary is required by the plugin itself, only the daemon.
+
+With lazy.nvim, from GitHub:
+>lua
+    -- lua/plugins/nvim-clipy.lua
+    return {
+      {
+        "c12i/nvim-clipy",
+        config = function()
+          require("nvim-clipy").setup()
+        end,
+      },
+    }
+<
 
 ==============================================================================
-2. Setup                                                  *nvim-clipy-setup*
+3. Setup                                                  *nvim-clipy-setup*
 
 >lua
     require("nvim-clipy").setup({
@@ -30,7 +55,7 @@ No `clipy` binary is required by the plugin itself, only the daemon.
 <
 
 ==============================================================================
-3. Commands                                            *nvim-clipy-commands*
+4. Commands                                            *nvim-clipy-commands*
 
     :ClipyList                     List recent clipboard history entries.
     :ClipyShow {id}                Show an entry's full content in a float.
@@ -48,7 +73,34 @@ No `clipy` binary is required by the plugin itself, only the daemon.
 `{id}` accepts a unique prefix, same as the `clipy` CLI.
 
 ==============================================================================
-4. Lua API                                                  *nvim-clipy-api*
+5. Keymaps                                              *nvim-clipy-keymaps*
+
+No default keymaps are set. A suggested bind for `:ClipyPick`:
+>lua
+    vim.keymap.set("n", "<leader>sy", function()
+      require("nvim-clipy.telescope").pick()
+    end, { desc = "Clipboard history" })
+<
+Or, if managing keymaps through lazy.nvim's `keys` spec (lazy-loads the
+plugin on first press instead of at startup):
+>lua
+    {
+      "c12i/nvim-clipy",
+      keys = {
+        {
+          "<leader>sy",
+          function() require("nvim-clipy.telescope").pick() end,
+          desc = "Clipboard history",
+        },
+      },
+      config = function()
+        require("nvim-clipy").setup()
+      end,
+    }
+<
+
+==============================================================================
+6. Lua API                                                  *nvim-clipy-api*
 
 >lua
     require("nvim-clipy").setup(opts)

@@ -1,24 +1,31 @@
 # nvim-clipy
 
-A Neovim client for the [clipy](../clipy-rust) clipboard-history daemon.
-Talks directly to the daemon's Unix socket over `vim.uv` (no shelling out to
-the `clipy` CLI), so the daemon must be running:
+A Neovim client for the [clipy](https://github.com/c12i/clipy-rust) clipboard-history daemon. Talks directly to the daemon's Unix socket over `vim.uv`, so the daemon must be installed and running.
+
+## Prerequisites
+
+`clipy` is published on crates.io and installs via cargo:
+
+```sh
+cargo install clipy
+```
+
+Then start the daemon (in the background, or under a process supervisor of
+your choice):
 
 ```sh
 clipy watch > /tmp/clipy.log 2>&1 &
 ```
 
-## Installation (local development)
+## Installation
 
-While developing, point lazy.nvim at this directory directly instead of a
-GitHub repo: no `owner/repo` needed:
+With [lazy.nvim](https://github.com/folke/lazy.nvim):
 
 ```lua
 -- lua/plugins/nvim-clipy.lua
 return {
   {
-    name = "nvim-clipy",
-    dir = vim.fn.expand("~/coding/nvim-clipy"),
+    "c12i/nvim-clipy",
     config = function()
       require("nvim-clipy").setup()
     end,
@@ -33,16 +40,36 @@ return {
 preview). See `:help nvim-clipy` for details, or the Lua API via
 `require("nvim-clipy")`.
 
-## Layout
+In the `:ClipyPick` picker: `<CR>` copies the selected entry back to the
+clipboard, `<C-d>` deletes it.
 
-- `lua/nvim-clipy/client.lua`: transport only -- speaks the daemon's
-  newline-delimited JSON protocol over its Unix socket via `vim.uv`.
-- `lua/nvim-clipy/init.lua`: the module `require("nvim-clipy")` resolves to.
-  Holds `setup(opts)`, plugin state, and the public API built on `client.lua`.
-- `lua/nvim-clipy/telescope.lua`: the `:ClipyPick` picker. Only loaded when
-  actually invoked, so telescope.nvim is an optional dependency.
-- `lua/telescope/_extensions/nvim-clipy.lua`: registers the picker as
-  `:Telescope nvim-clipy`.
-- `plugin/nvim-clipy.lua`: auto-sourced by Neovim at startup (no `require()`
-  needed). This is where user commands typically get defined.
-- `doc/nvim-clipy.txt`: `:help nvim-clipy` source, in vimdoc format.
+## Keymaps
+
+No default keymaps are set. A suggested bind for `:ClipyPick`:
+
+```lua
+vim.keymap.set("n", "<leader>sy", function()
+  require("nvim-clipy.telescope").pick()
+end, { desc = "Clipboard history" })
+```
+
+Or via lazy.nvim's `keys` spec, which lazy-loads the plugin on first press
+instead of at startup:
+
+```lua
+{
+  "c12i/nvim-clipy",
+  keys = {
+    {
+      "<leader>sy",
+      function() require("nvim-clipy.telescope").pick() end,
+      desc = "Clipboard history",
+    },
+  },
+  config = function()
+    require("nvim-clipy").setup()
+  end,
+}
+```
+
+This project is [MIT](LICENSE) licensed.
