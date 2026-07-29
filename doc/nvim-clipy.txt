@@ -1,34 +1,58 @@
-*nvim-clipy.txt*  Clipboard history via the clipy daemon
+*nvim-clipy.txt*  System-wide clipboard history for Neovim
 
 ==============================================================================
 CONTENTS                                                *nvim-clipy-contents*
 
     1. Introduction ............... |nvim-clipy-introduction|
-    2. Installation ............... |nvim-clipy-installation|
-    3. Setup ............................. |nvim-clipy-setup|
-    4. Commands ....................... |nvim-clipy-commands|
-    5. Keymaps ....................... |nvim-clipy-keymaps|
-    6. Lua API ........................... |nvim-clipy-api|
+    2. Why not neoclip.lua? ....... |nvim-clipy-vs-neoclip|
+    3. Prerequisites ............... |nvim-clipy-prerequisites|
+    4. Installation ............... |nvim-clipy-installation|
+    5. Setup ............................. |nvim-clipy-setup|
+    6. Commands ....................... |nvim-clipy-commands|
+    7. Keymaps ....................... |nvim-clipy-keymaps|
+    8. Lua API ........................... |nvim-clipy-api|
 
 ==============================================================================
 1. Introduction                                    *nvim-clipy-introduction*
 
-nvim-clipy talks directly to the `clipy` daemon's Unix socket (see the
-clipy-rust project) using `vim.uv`. The plugin starts the daemon for you
-(see |nvim-clipy-installation|); the `clipy` binary itself must be
-installed for that to work.
+System-wide clipboard history for Neovim. Copy anything, anywhere on your
+machine -- Neovim, your browser, Slack, a terminal -- and it's captured,
+searchable, and re-copyable from inside Neovim via a Telescope picker with
+preview.
+
+It's backed by clipy (https://github.com/c12i/clipy-rust), a small daemon
+that polls the OS clipboard continuously in the background, independent of
+Neovim. nvim-clipy talks to it over its Unix socket using `vim.uv`.
 
 ==============================================================================
-2. Installation                                  *nvim-clipy-installation*
+2. Why not neoclip.lua?                              *nvim-clipy-vs-neoclip*
+
+neoclip.lua (https://github.com/AckslD/nvim-neoclip.lua) is a similar-
+looking picker, but it's fundamentally different: it hooks `TextYankPost`,
+so it only records things yanked or deleted *inside Neovim*. Copy something
+in your browser, a terminal, Slack, anywhere outside Neovim, and it's
+invisible to neoclip. Its history also lives in Neovim's own memory by
+default, so it resets every time Neovim closes unless you turn on
+persistent history.
+
+nvim-clipy's history comes from the daemon polling the real system
+clipboard, not a Neovim event, so it captures everything you copy anywhere
+on the machine. Because that capture is a separate process from Neovim, it
+persists across Neovim restarts (and reboots too, if you run the daemon
+under a supervisor, see |nvim-clipy-prerequisites|) and is shared across
+every Neovim instance you have open, not just the one that made the copy.
+
+==============================================================================
+3. Prerequisites                                  *nvim-clipy-prerequisites*
 
 The `clipy` daemon is published on crates.io and installs via cargo:
 >
     cargo install clipy
 <
-That's it -- on `VimEnter`, nvim-clipy checks whether `clipy watch` is
-already reachable and, if not, spawns it detached so it keeps running after
-Neovim closes. If `clipy` isn't on `$PATH`, you'll get a warning instead of
-an error, pointing back at `cargo install clipy`.
+nvim-clipy starts the daemon for you. On `VimEnter` it checks whether
+`clipy watch` is already reachable and, if not, spawns it detached so it
+keeps running after Neovim closes. If `clipy` isn't on `$PATH`, you'll get
+a warning instead of an error, pointing back at `cargo install clipy`.
 
 If you'd rather the daemon run independently of Neovim entirely --
 surviving reboots, capturing clipboard changes even when Neovim is never
@@ -38,12 +62,32 @@ launchd LaunchAgent with `RunAtLoad`/`KeepAlive` works well):
     clipy watch > /tmp/clipy.log 2>&1 &
 <
 
-With lazy.nvim, from GitHub:
+==============================================================================
+4. Installation                                    *nvim-clipy-installation*
+
+With lazy.nvim:
 >lua
     -- lua/plugins/nvim-clipy.lua
     return {
       {
         "c12i/nvim-clipy",
+        dependencies = { "nvim-telescope/telescope.nvim" },
+        -- Must load at startup, not lazily on keypress: the daemon-
+        -- autostart autocmd lives in plugin/nvim-clipy.lua, which only
+        -- gets sourced once the plugin loads. Declaring only `keys` below
+        -- (without `lazy = false`) would defer loading until the first
+        -- keypress -- past VimEnter, so the autocmd never gets a chance
+        -- to fire and the daemon never auto-starts.
+        lazy = false,
+        keys = {
+          {
+            "<leader>sy",
+            function()
+              require("nvim-clipy.telescope").pick()
+            end,
+            desc = "Clipboard history",
+          },
+        },
         config = function()
           require("nvim-clipy").setup()
         end,
@@ -52,7 +96,7 @@ With lazy.nvim, from GitHub:
 <
 
 ==============================================================================
-3. Setup                                                  *nvim-clipy-setup*
+5. Setup                                                  *nvim-clipy-setup*
 
 >lua
     require("nvim-clipy").setup({
@@ -66,7 +110,7 @@ With lazy.nvim, from GitHub:
 <
 
 ==============================================================================
-4. Commands                                            *nvim-clipy-commands*
+6. Commands                                            *nvim-clipy-commands*
 
     :ClipyList                     List recent clipboard history entries.
     :ClipyShow {id}                Show an entry's full content in a float.
@@ -84,35 +128,22 @@ With lazy.nvim, from GitHub:
 
 `{id}` accepts a unique prefix, same as the `clipy` CLI.
 
-==============================================================================
-5. Keymaps                                              *nvim-clipy-keymaps*
+In the `:ClipyPick` picker: `<CR>` copies the selected entry back to the
+clipboard, `<C-d>` deletes it.
 
-No default keymaps are set. A suggested bind for `:ClipyPick`:
+==============================================================================
+7. Keymaps                                              *nvim-clipy-keymaps*
+
+No default keymaps are set. If you're not using lazy.nvim's `keys` spec
+(shown in |nvim-clipy-installation|), a plain keymap works too:
 >lua
     vim.keymap.set("n", "<leader>sy", function()
       require("nvim-clipy.telescope").pick()
     end, { desc = "Clipboard history" })
 <
-Or, if managing keymaps through lazy.nvim's `keys` spec (lazy-loads the
-plugin on first press instead of at startup):
->lua
-    {
-      "c12i/nvim-clipy",
-      keys = {
-        {
-          "<leader>sy",
-          function() require("nvim-clipy.telescope").pick() end,
-          desc = "Clipboard history",
-        },
-      },
-      config = function()
-        require("nvim-clipy").setup()
-      end,
-    }
-<
 
 ==============================================================================
-6. Lua API                                                  *nvim-clipy-api*
+8. Lua API                                                  *nvim-clipy-api*
 
 >lua
     require("nvim-clipy").setup(opts)
