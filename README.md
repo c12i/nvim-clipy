@@ -18,6 +18,12 @@ nvim-clipy's history comes from the daemon polling the real system clipboard ins
 cargo install clipy
 ```
 
+Or install prebuilt binary from [GitHub Releases](https://github.com/c12i/clipy-rust/releases):
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/c12i/clipy-rust/main/install.sh | sh
+```
+
 nvim-clipy starts the daemon for you. On `VimEnter` it checks whether `clipy watch` is already reachable and, if not, spawns it detached so it keeps running after Neovim closes. If `clipy` isn't on `$PATH`, you'll get a warning, pointing back at `cargo install clipy`.
 
 If you'd rather the daemon run independently of Neovim entirely, surviving reboots, capturing clipboard changes even when Neovim is never opened, you can start it yourself under a process supervisor instead:
