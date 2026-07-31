@@ -29,3 +29,27 @@ jobs:
 
       - name: luacheck
         run: luacheck lua/
+
+  test:
+    name: client tests (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: rhysd/action-setup-vim@v1
+        with:
+          neovim: true
+          version: stable
+
+      # Prebuilt binary: no Rust toolchain needed.
+      - name: Install clipy
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/c12i/clipy-rust/main/install.sh | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Run tests
+        run: sh tests/run.sh
