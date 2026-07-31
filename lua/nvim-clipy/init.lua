@@ -1,4 +1,4 @@
-local client = require("nvim-clipy.client")
+local Client = require("nvim-clipy.client")
 
 local M = {}
 
@@ -30,9 +30,13 @@ M.config = {
   history_limit = 30,
 }
 
+-- Recreated in M.setup() below so it never goes stale.
+local client = Client.new(M.config.socket_path)
+
 function M.setup(opts)
   -- recursively merge tables, with opts winning on conflicts
   M.config = vim.tbl_deep_extend("force", M.config, opts or {})
+  client = Client.new(M.config.socket_path)
 end
 
 local function notify(msg, level)
@@ -52,34 +56,21 @@ local function short_id(id)
   return id:sub(1, 8)
 end
 
---- Spawns `clipy watch` detached (own session, ignored stdio) so it outlives
---- this Neovim process. No-ops with a warning if `clipy` isn't on $PATH.
+--- Notifies for a Client.spawn_daemon() result; returns whether it started.
 local function start_daemon()
-  if vim.fn.executable("clipy") == 0 then
+  local result = Client.spawn_daemon(M.config.socket_path)
+  if result == "not_installed" then
     notify(
-      "`clipy` binary not found on $PATH -- clipboard history daemon not started (install with `cargo install clipy`)",
+      "`clipy` binary not found on $PATH, clipboard history daemon not started (install with `cargo install clipy`)",
       vim.log.levels.WARN
     )
-    return
+    return false
   end
-
-  local uv = vim.uv or vim.loop
-  local handle
-  handle = uv.spawn("clipy", {
-    args = { "watch" },
-    detached = true,
-    stdio = { nil, nil, nil },
-  }, function()
-    if handle then
-      handle:close()
-    end
-  end)
-
-  if not handle then
+  if result == "spawn_failed" then
     notify("failed to start the clipy daemon", vim.log.levels.ERROR)
-    return
+    return false
   end
-  handle:unref()
+  return true
 end
 
 --- Starts the daemon if it isn't already reachable. Meant to be called once
@@ -96,35 +87,21 @@ function M.ensure_daemon()
   end)
 end
 
---- Runs `req` and calls `on_ok(response)` unless the daemon is unreachable or
---- returns an error, in which case a notification is shown and `on_ok` is
---- never called.
-local function call(req, on_ok)
-  client.request(M.config.socket_path, req, function(err, response)
-    if err then
-      notify(err, vim.log.levels.ERROR)
-      return
-    end
-    if response.status == "error" then
-      notify(response.message, vim.log.levels.ERROR)
-      return
-    end
-    on_ok(response)
-  end)
+local function on_err(err)
+  notify(err, vim.log.levels.ERROR)
 end
 
---- Fetch history entries as a plain list of `{id, content, created_at,
---- updated_at}` tables. `callback(entries)` fires on success; errors are
---- notified and `callback` is not called.
+--- Fetches entries as `{id, content, created_at, updated_at}` tables into
+--- `callback`; on error, notifies instead of calling it.
 function M.fetch(opts, callback)
   opts = opts or {}
-  call({
+  client:call({
     cmd = "list",
     limit = opts.limit or M.config.history_limit,
     query = opts.query,
   }, function(response)
     callback(response.entries or {})
-  end)
+  end, on_err)
 end
 
 function M.list()
@@ -163,33 +140,33 @@ local function open_preview_window(entry)
 end
 
 function M.show(id)
-  call({ cmd = "show", id = id }, function(response)
+  client:call({ cmd = "show", id = id }, function(response)
     open_preview_window(response.entry)
-  end)
+  end, on_err)
 end
 
 function M.copy(id)
-  call({ cmd = "copy", id = id }, function(response)
+  client:call({ cmd = "copy", id = id }, function(response)
     notify(
       string.format("copied %s to the clipboard: %s", short_id(response.entry.id), preview(response.entry.content))
     )
-  end)
+  end, on_err)
 end
 
 function M.delete(id)
-  call({ cmd = "delete", id = id }, function()
+  client:call({ cmd = "delete", id = id }, function()
     notify("deleted " .. id)
-  end)
+  end, on_err)
 end
 
 function M.clear()
-  call({ cmd = "clear" }, function()
+  client:call({ cmd = "clear" }, function()
     notify("cleared clipboard history")
-  end)
+  end, on_err)
 end
 
 function M.status()
-  call({ cmd = "status" }, function(response)
+  client:call({ cmd = "status" }, function(response)
     notify(
       string.format(
         "daemon:  running\nsocket:  %s\ndb:      %s\nentries: %d",
@@ -198,13 +175,13 @@ function M.status()
         response.count
       )
     )
-  end)
+  end, on_err)
 end
 
 function M.kill()
-  call({ cmd = "shutdown" }, function()
+  client:call({ cmd = "shutdown" }, function()
     notify("daemon stopped")
-  end)
+  end, on_err)
 end
 
 return M

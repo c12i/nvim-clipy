@@ -5,7 +5,17 @@
 
 local uv = vim.uv or vim.loop
 
-local M = {}
+---@class Client
+---@field socket_path string
+local Client = {}
+Client.__index = Client
+
+--- Creates a new Client bound to `socket_path`.
+---@param socket_path string
+---@return Client
+function Client.new(socket_path)
+  return setmetatable({ socket_path = socket_path }, Client)
+end
 
 --- Feeds `chunk` into `buffer`, invoking `on_line` for each complete
 --- newline-terminated line found. Returns the leftover (possibly empty)
@@ -34,9 +44,11 @@ local function connect_err(socket_path, err)
   )
 end
 
---- Send a single request and invoke callback(err, response) exactly once.
---- `response` is the decoded JSON table on success (err is nil).
-function M.request(socket_path, req, callback)
+--- Sends `req` and invokes callback(err, response) exactly once.
+---@param req table
+---@param callback fun(err: string?, response: table?)
+function Client:request(req, callback)
+  local socket_path = self.socket_path
   local pipe = uv.new_pipe(false)
 
   pipe:connect(socket_path, function(err)
@@ -73,7 +85,7 @@ function M.request(socket_path, req, callback)
         return
       end
       if not chunk then
-        -- EOF without a full line -- daemon closed early.
+        -- EOF without a full line: daemon closed early.
         if not done then
           done = true
           pipe:close()
@@ -103,4 +115,64 @@ function M.request(socket_path, req, callback)
   end)
 end
 
-return M
+--- Like `request`, but splits transport failure vs. `{status = "error"}`
+--- into a single `on_err`, so callers only handle one error path.
+---@param req table
+---@param on_ok fun(response: table)
+---@param on_err fun(message: string)
+function Client:call(req, on_ok, on_err)
+  self:request(req, function(err, response)
+    if err then
+      on_err(err)
+      return
+    end
+    if response.status == "error" then
+      on_err(response.message)
+      return
+    end
+    on_ok(response)
+  end)
+end
+
+-- uv.spawn's `env` replaces the child's environment rather than extending
+-- it, so this carries over the current one (PATH, HOME, ...) plus
+-- CLIPY_DATA_DIR, rather than just passing the latter alone.
+local function daemon_env(socket_path)
+  local env = vim.fn.environ()
+  env.CLIPY_DATA_DIR = vim.fn.fnamemodify(socket_path, ":h")
+  local list = {}
+  for name, value in pairs(env) do
+    table.insert(list, name .. "=" .. value)
+  end
+  return list
+end
+
+--- Spawns `clipy watch` detached at `socket_path`. Not an instance method:
+--- spawning isn't tied to any particular Client.
+---@param socket_path string
+---@return "not_installed"|"spawn_failed"|"started"
+function Client.spawn_daemon(socket_path)
+  if vim.fn.executable("clipy") == 0 then
+    return "not_installed"
+  end
+
+  local handle
+  handle = uv.spawn("clipy", {
+    args = { "watch" },
+    env = daemon_env(socket_path),
+    detached = true,
+    stdio = { nil, nil, nil },
+  }, function()
+    if handle then
+      handle:close()
+    end
+  end)
+
+  if not handle then
+    return "spawn_failed"
+  end
+  handle:unref()
+  return "started"
+end
+
+return Client
