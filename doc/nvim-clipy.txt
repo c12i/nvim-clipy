@@ -16,7 +16,7 @@ CONTENTS                                                *nvim-clipy-contents*
 1. Introduction                                    *nvim-clipy-introduction*
 
 System-wide clipboard history for Neovim. Copy anything, anywhere on your
-machine -- Neovim, your browser, Slack, a terminal -- and it's captured,
+machine: Neovim, your browser, Slack, a terminal, and it's captured,
 searchable, and re-copyable from inside Neovim via a Telescope picker with
 preview.
 
@@ -54,9 +54,9 @@ nvim-clipy starts the daemon for you. On `VimEnter` it checks whether
 keeps running after Neovim closes. If `clipy` isn't on `$PATH`, you'll get
 a warning instead of an error, pointing back at `cargo install clipy`.
 
-If you'd rather the daemon run independently of Neovim entirely --
-surviving reboots, capturing clipboard changes even when Neovim is never
-opened -- start it yourself under a process supervisor instead (on macOS, a
+If you'd rather the daemon run independently of Neovim entirely, surviving
+reboots, capturing clipboard changes even when Neovim is never opened,
+start it yourself under a process supervisor instead (on macOS, a
 launchd LaunchAgent with `RunAtLoad`/`KeepAlive` works well):
 >
     clipy watch > /tmp/clipy.log 2>&1 &
@@ -76,7 +76,7 @@ With lazy.nvim:
         -- autostart autocmd lives in plugin/nvim-clipy.lua, which only
         -- gets sourced once the plugin loads. Declaring only `keys` below
         -- (without `lazy = false`) would defer loading until the first
-        -- keypress -- past VimEnter, so the autocmd never gets a chance
+        -- keypress, past VimEnter, so the autocmd never gets a chance
         -- to fire and the daemon never auto-starts.
         lazy = false,
         keys = {
@@ -128,7 +128,7 @@ With lazy.nvim:
                                      split. See |nvim-clipy-browse| below.
 
 Acting on a specific entry (copy/delete) is done from `:ClipyPick` or
-`:ClipyBrowse`, not by typing an id into a command -- there's no
+`:ClipyBrowse`, not by typing an id into a command: there's no
 `:ClipyCopy {id}`-style command, since resolving ids by hand isn't a great
 fit for Neovim once you have a picker.
 
