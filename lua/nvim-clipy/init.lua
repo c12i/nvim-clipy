@@ -73,17 +73,27 @@ local function start_daemon()
   return true
 end
 
---- Starts the daemon if it isn't already reachable. Meant to be called once
---- per session (e.g. on VimEnter); safe to call from multiple concurrent
---- Neovim instances since the daemon itself refuses to bind twice.
-function M.ensure_daemon()
+--- Starts the daemon if unreachable. `verbose` (for a manual :ClipyStart)
+--- also notifies on "already running"/"started"; VimEnter's call omits it
+--- so it doesn't notify every startup.
+function M.ensure_daemon(verbose)
   local uv = vim.uv or vim.loop
   local pipe = uv.new_pipe(false)
   pipe:connect(M.config.socket_path, function(err)
     pipe:close()
-    if err then
-      vim.schedule(start_daemon)
+    if not err then
+      if verbose then
+        vim.schedule(function()
+          notify("daemon already running")
+        end)
+      end
+      return
     end
+    vim.schedule(function()
+      if start_daemon() and verbose then
+        notify("daemon started")
+      end
+    end)
   end)
 end
 

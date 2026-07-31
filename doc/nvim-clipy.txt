@@ -115,6 +115,8 @@ With lazy.nvim:
     :ClipyList                     List recent clipboard history entries.
     :ClipyClear                    Delete all history.
     :ClipyStatus                   Show daemon status.
+    :ClipyStart                    Start the daemon if it isn't already
+                                     running.
     :ClipyKill                     Stop the running daemon. It restarts
                                      automatically next time Neovim starts.
     :ClipyPick                     Pick an entry via Telescope, with a
@@ -168,6 +170,7 @@ No default keymaps are set. If you're not using lazy.nvim's `keys` spec
     require("nvim-clipy").clear()
     require("nvim-clipy").status()
     require("nvim-clipy").kill()
+    require("nvim-clipy").ensure_daemon(verbose)
     require("nvim-clipy").fetch(opts, callback) -- opts = { limit, query }
 <
 
