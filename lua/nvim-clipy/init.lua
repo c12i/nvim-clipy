@@ -128,33 +128,6 @@ function M.list()
   end)
 end
 
---- Opens a scratch floating window showing an entry's full content.
-local function open_preview_window(entry)
-  local buf = vim.api.nvim_create_buf(false, true)
-  vim.api.nvim_buf_set_lines(buf, 0, -1, false, vim.split(entry.content, "\n", { plain = true }))
-  vim.bo[buf].modifiable = false
-  vim.bo[buf].bufhidden = "wipe"
-
-  local width = math.max(20, math.floor(vim.o.columns * 0.7))
-  local height = math.max(5, math.floor(vim.o.lines * 0.6))
-  vim.api.nvim_open_win(buf, true, {
-    relative = "editor",
-    width = width,
-    height = height,
-    row = math.floor((vim.o.lines - height) / 2),
-    col = math.floor((vim.o.columns - width) / 2),
-    style = "minimal",
-    border = "rounded",
-    title = string.format(" %s ", short_id(entry.id)),
-  })
-end
-
-function M.show(id)
-  client:call({ cmd = "show", id = id }, function(response)
-    open_preview_window(response.entry)
-  end, on_err)
-end
-
 function M.copy(id)
   client:call({ cmd = "copy", id = id }, function(response)
     notify(

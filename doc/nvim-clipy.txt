@@ -127,7 +127,7 @@ With lazy.nvim:
     :ClipyBrowse                   Browse history in a persistent bottom
                                      split. See |nvim-clipy-browse| below.
 
-Acting on a specific entry (copy/show/delete) is done from `:ClipyPick` or
+Acting on a specific entry (copy/delete) is done from `:ClipyPick` or
 `:ClipyBrowse`, not by typing an id into a command -- there's no
 `:ClipyCopy {id}`-style command, since resolving ids by hand isn't a great
 fit for Neovim once you have a picker.
@@ -164,7 +164,6 @@ No default keymaps are set. If you're not using lazy.nvim's `keys` spec
 >lua
     require("nvim-clipy").setup(opts)
     require("nvim-clipy").list()
-    require("nvim-clipy").show(id)
     require("nvim-clipy").copy(id)
     require("nvim-clipy").delete(id)
     require("nvim-clipy").clear()
