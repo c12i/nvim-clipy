@@ -72,6 +72,7 @@ return {
 | `:ClipyList`   | List recent clipboard history entries                            |
 | `:ClipyClear`  | Delete all history                                               |
 | `:ClipyStatus` | Show daemon status                                               |
+| `:ClipyStart`  | Start the daemon if it isn't already running                     |
 | `:ClipyKill`   | Stop the daemon (restarts automatically next time Neovim starts) |
 | `:ClipyPick`   | Pick an entry via Telescope, with preview                        |
 | `:ClipyBrowse` | Browse history in a persistent bottom split                      |

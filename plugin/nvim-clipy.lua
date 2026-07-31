@@ -25,6 +25,10 @@ command("ClipyKill", function()
   require("nvim-clipy").kill()
 end, { desc = "Stop the clipy daemon" })
 
+command("ClipyStart", function()
+  require("nvim-clipy").ensure_daemon(true)
+end, { desc = "Start the clipy daemon if it isn't already running" })
+
 command("ClipyPick", function()
   require("nvim-clipy.telescope").pick()
 end, { desc = "Pick a clipboard history entry via Telescope" })
