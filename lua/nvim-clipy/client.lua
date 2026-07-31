@@ -147,8 +147,7 @@ local function daemon_env(socket_path)
   return list
 end
 
---- Spawns `clipy watch` detached at `socket_path`. Not an instance method:
---- spawning isn't tied to any particular Client.
+--- Spawns `clipy watch` detached at `socket_path`.
 ---@param socket_path string
 ---@return "not_installed"|"spawn_failed"|"started"
 function Client.spawn_daemon(socket_path)
