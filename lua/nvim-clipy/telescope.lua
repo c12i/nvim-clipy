@@ -1,6 +1,4 @@
--- Telescope picker over clipboard history. Kept separate from init.lua so
--- that requiring "nvim-clipy" never pulls in a telescope.nvim dependency;
--- this module is only loaded when the picker is actually invoked.
+-- Kept out of init.lua so requiring "nvim-clipy" doesn't pull in telescope.
 
 local M = {}
 

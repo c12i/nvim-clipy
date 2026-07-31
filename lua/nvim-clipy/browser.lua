@@ -1,6 +1,5 @@
--- Alternative to the Telescope picker: a persistent bottom split listing
--- clipboard history, meant to be left open and glanced at while you work
--- rather than opened and closed like a modal picker.
+-- Alternative to the Telescope picker: a persistent bottom split, meant to
+-- be left open rather than opened and closed like a modal.
 
 local M = {}
 
@@ -83,8 +82,7 @@ local function setup_buffer()
   map("<Esc>", "<cmd>close<cr>", "Close clipboard history")
 end
 
---- Opens (or focuses, if already open) the bottom split. Refreshes the list
---- either way.
+--- Opens the bottom split, or focuses + refreshes it if already open.
 function M.open()
   if buf and vim.api.nvim_buf_is_valid(buf) then
     local win = vim.fn.bufwinid(buf)
