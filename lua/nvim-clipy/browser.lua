@@ -50,7 +50,8 @@ local function render(entries)
     lines = { "(no clipboard history yet)" }
   else
     for i, entry in ipairs(entries) do
-      lines[i] = string.format("%s  %s  %s", short_id(entry.id), preview(entry.content), format_time(entry.updated_at))
+      lines[i] =
+        string.format("%s  %-10s  %s", short_id(entry.id), format_time(entry.updated_at), preview(entry.content))
       entries_by_line[i] = entry
     end
   end
