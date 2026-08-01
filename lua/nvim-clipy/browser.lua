@@ -19,6 +19,21 @@ local function preview(content, width)
   return flattened
 end
 
+local function format_time(unix)
+  local now = os.time()
+  local delta = now - unix
+
+  if delta < 60 then
+    return string.format("%ds ago", delta)
+  elseif delta < 3600 then
+    return string.format("%dm ago", math.floor(delta / 60))
+  elseif delta < 86400 then
+    return string.format("%dh ago", math.floor(delta / 3600))
+  else
+    return string.format("%dd ago", math.floor(delta / 86400))
+  end
+end
+
 local function entry_at_cursor()
   local line = vim.api.nvim_win_get_cursor(0)[1]
   return entries_by_line[line]
@@ -35,7 +50,7 @@ local function render(entries)
     lines = { "(no clipboard history yet)" }
   else
     for i, entry in ipairs(entries) do
-      lines[i] = string.format("%s  %s", short_id(entry.id), preview(entry.content))
+      lines[i] = string.format("%s  %s  %s", short_id(entry.id), preview(entry.content), format_time(entry.updated_at))
       entries_by_line[i] = entry
     end
   end
